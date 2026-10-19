@@ -1,0 +1,1058 @@
+openapi: 3.0.3
+info:
+  title: Marketplace Homework 2
+  version: 1.0.0
+  description: Contract-first marketplace. Money uses decimal JSON numbers (maximum
+    two fractional digits); timestamps use ISO 8601. All operations except authentication
+    require bearer JWT. Every response includes X-Request-Id.
+security:
+- bearerAuth: []
+paths:
+  /auth/register:
+    post:
+      tags:
+      - Auth
+      operationId: register
+      summary: Register a USER or SELLER
+      description: Public. ADMIN accounts are provisioned only through server configuration.
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+          headers:
+            X-Request-Id:
+              description: Request UUID
+              schema: &id001
+                type: string
+                format: uuid
+        '400':
+          $ref: '#/components/responses/Error400'
+        '500':
+          $ref: '#/components/responses/Error500'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+  /auth/login:
+    post:
+      tags:
+      - Auth
+      operationId: login
+      summary: Login
+      description: ''
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+          headers:
+            X-Request-Id:
+              description: Request UUID
+              schema: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '500':
+          $ref: '#/components/responses/Error500'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+  /auth/refresh:
+    post:
+      tags:
+      - Auth
+      operationId: refresh
+      summary: Exchange refresh JWT for a token pair
+      description: ''
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+          headers:
+            X-Request-Id:
+              description: Request UUID
+              schema: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '500':
+          $ref: '#/components/responses/Error500'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+  /products:
+    post:
+      tags:
+      - Products
+      operationId: createProduct
+      summary: Create a product
+      description: 'SELLER: own seller_id from JWT. ADMIN: own seller_id from JWT.'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+          headers:
+            X-Request-Id:
+              description: Request UUID
+              schema: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+    get:
+      tags:
+      - Products
+      operationId: listProducts
+      summary: List products with pagination
+      description: USER, SELLER, ADMIN. Archived products are visible; use status
+        to filter.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPage'
+          headers:
+            X-Request-Id:
+              description: Request UUID
+              schema: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 1000000
+          default: 0
+      - name: size
+        in: query
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: status
+        in: query
+        schema:
+          $ref: '#/components/schemas/ProductStatus'
+      - name: category
+        in: query
+        description: Exact, case-sensitive match
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+  /products/{id}:
+    get:
+      tags:
+      - Products
+      operationId: getProduct
+      summary: Get product including archived products
+      description: USER, SELLER, ADMIN.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+          headers:
+            X-Request-Id:
+              description: Request UUID
+              schema: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: *id001
+    put:
+      tags:
+      - Products
+      operationId: updateProduct
+      summary: Replace product fields
+      description: 'SELLER: own products only. ADMIN: any product.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductResponse'
+          headers:
+            X-Request-Id:
+              description: Request UUID
+              schema: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: *id001
+    delete:
+      tags:
+      - Products
+      operationId: deleteProduct
+      summary: Archive a product (soft delete)
+      description: 'SELLER: own products only. ADMIN: any product.'
+      responses:
+        '204':
+          description: Success
+          headers:
+            X-Request-Id:
+              description: Request UUID
+              schema: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: *id001
+  /orders:
+    post:
+      tags:
+      - Orders
+      operationId: createOrder
+      summary: Reserve stock and create order
+      description: 'USER: own order. ADMIN: own order. SELLER forbidden.'
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+          headers:
+            X-Request-Id:
+              description: Request UUID
+              schema: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreate'
+  /orders/{id}:
+    get:
+      tags:
+      - Orders
+      operationId: getOrder
+      summary: Get order
+      description: 'USER: own only. ADMIN: any. SELLER forbidden.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+          headers:
+            X-Request-Id:
+              description: Request UUID
+              schema: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: *id001
+    put:
+      tags:
+      - Orders
+      operationId: updateOrder
+      summary: Replace items on a CREATED order
+      description: 'USER: own only. ADMIN: any. SELLER forbidden.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+          headers:
+            X-Request-Id:
+              description: Request UUID
+              schema: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderUpdate'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: *id001
+  /orders/{id}/cancel:
+    post:
+      tags:
+      - Orders
+      operationId: cancelOrder
+      summary: Cancel CREATED or PAYMENT_PENDING order
+      description: 'USER: own only. ADMIN: any. SELLER forbidden.'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+          headers:
+            X-Request-Id:
+              description: Request UUID
+              schema: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: *id001
+  /orders/{id}/status:
+    post:
+      tags:
+      - Orders
+      operationId: changeOrderStatus
+      summary: Advance order lifecycle
+      description: ADMIN only. CREATED -> PAYMENT_PENDING -> PAID -> SHIPPED -> COMPLETED.
+        Use cancel endpoint for cancellation.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+          headers:
+            X-Request-Id:
+              description: Request UUID
+              schema: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderStatusChange'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: *id001
+  /promo-codes:
+    post:
+      tags:
+      - PromoCodes
+      operationId: createPromo
+      summary: Create promo code
+      description: SELLER or ADMIN.
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PromoResponse'
+          headers:
+            X-Request-Id:
+              description: Request UUID
+              schema: *id001
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromoCreate'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  responses:
+    Error400:
+      description: VALIDATION_ERROR
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+      headers:
+        X-Request-Id:
+          description: Request UUID
+          schema: *id001
+    Error401:
+      description: TOKEN_EXPIRED, TOKEN_INVALID, REFRESH_TOKEN_INVALID
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+      headers:
+        X-Request-Id:
+          description: Request UUID
+          schema: *id001
+    Error403:
+      description: ACCESS_DENIED, ORDER_OWNERSHIP_VIOLATION
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+      headers:
+        X-Request-Id:
+          description: Request UUID
+          schema: *id001
+    Error404:
+      description: PRODUCT_NOT_FOUND, ORDER_NOT_FOUND
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+      headers:
+        X-Request-Id:
+          description: Request UUID
+          schema: *id001
+    Error409:
+      description: PRODUCT_INACTIVE, ORDER_HAS_ACTIVE, INVALID_STATE_TRANSITION, INSUFFICIENT_STOCK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+      headers:
+        X-Request-Id:
+          description: Request UUID
+          schema: *id001
+    Error422:
+      description: PROMO_CODE_INVALID, PROMO_CODE_MIN_AMOUNT
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+      headers:
+        X-Request-Id:
+          description: Request UUID
+          schema: *id001
+    Error429:
+      description: ORDER_LIMIT_EXCEEDED
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+      headers:
+        X-Request-Id:
+          description: Request UUID
+          schema: *id001
+    Error500:
+      description: INTERNAL_ERROR
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+      headers:
+        X-Request-Id:
+          description: Request UUID
+          schema: *id001
+  schemas:
+    Role:
+      type: string
+      enum:
+      - USER
+      - SELLER
+      - ADMIN
+    ProductStatus:
+      type: string
+      enum:
+      - ACTIVE
+      - INACTIVE
+      - ARCHIVED
+    OrderStatus:
+      type: string
+      enum:
+      - CREATED
+      - PAYMENT_PENDING
+      - PAID
+      - SHIPPED
+      - COMPLETED
+      - CANCELED
+    DiscountType:
+      type: string
+      enum:
+      - PERCENTAGE
+      - FIXED_AMOUNT
+    ErrorCode:
+      type: string
+      enum:
+      - PRODUCT_NOT_FOUND
+      - PRODUCT_INACTIVE
+      - ORDER_NOT_FOUND
+      - ORDER_LIMIT_EXCEEDED
+      - ORDER_HAS_ACTIVE
+      - INVALID_STATE_TRANSITION
+      - INSUFFICIENT_STOCK
+      - PROMO_CODE_INVALID
+      - PROMO_CODE_MIN_AMOUNT
+      - ORDER_OWNERSHIP_VIOLATION
+      - VALIDATION_ERROR
+      - TOKEN_EXPIRED
+      - TOKEN_INVALID
+      - REFRESH_TOKEN_INVALID
+      - ACCESS_DENIED
+      - INTERNAL_ERROR
+    ApiError:
+      type: object
+      additionalProperties: false
+      properties:
+        error_code:
+          $ref: '#/components/schemas/ErrorCode'
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+      required:
+      - error_code
+      - message
+    ProductCreate:
+      type: object
+      additionalProperties: false
+      properties: &id002
+        name: &id003
+          type: string
+          minLength: 1
+          maxLength: 255
+          pattern: .*\S.*
+        description:
+          type: string
+          maxLength: 4000
+          nullable: true
+        price: &id004
+          type: number
+          format: decimal
+          minimum: 0.01
+          maximum: 9999999999999.99
+          multipleOf: 0.01
+          x-field-extra-annotation: '@jakarta.validation.constraints.Digits(integer
+            = 13, fraction = 2)'
+        stock: &id005
+          type: integer
+          minimum: 0
+        category: &id006
+          type: string
+          minLength: 1
+          maxLength: 100
+          pattern: .*\S.*
+        status: &id007
+          $ref: '#/components/schemas/ProductStatus'
+      required:
+      - name
+      - price
+      - stock
+      - category
+      - status
+    ProductUpdate:
+      type: object
+      additionalProperties: false
+      properties: *id002
+      required:
+      - name
+      - price
+      - stock
+      - category
+      - status
+    ProductResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        name: *id003
+        description:
+          type: string
+          maxLength: 4000
+          nullable: true
+        price: *id004
+        stock: *id005
+        category: *id006
+        status: *id007
+        seller_id: *id001
+        created_at: &id008
+          type: string
+          format: date-time
+        updated_at: *id008
+      required:
+      - id
+      - name
+      - price
+      - stock
+      - category
+      - status
+      - seller_id
+      - created_at
+      - updated_at
+    ProductPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductResponse'
+        totalElements:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        size:
+          type: integer
+      required:
+      - items
+      - totalElements
+      - page
+      - size
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          minLength: 3
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 72
+          description: 8-72 characters, at most 72 UTF-8 bytes.
+        role:
+          type: string
+          enum:
+          - USER
+          - SELLER
+          default: USER
+          x-field-extra-annotation: '@jakarta.validation.constraints.NotNull'
+      required:
+      - email
+      - password
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          minLength: 3
+        password:
+          type: string
+          format: password
+          minLength: 1
+          maxLength: 72
+      required:
+      - email
+      - password
+    RefreshRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        refresh_token:
+          type: string
+          minLength: 1
+          maxLength: 4096
+      required:
+      - refresh_token
+    UserResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+        created_at: *id008
+      required:
+      - id
+      - email
+      - role
+      - created_at
+    TokenResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+      required:
+      - access_token
+      - refresh_token
+    OrderItemRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        product_id: *id001
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 999
+      required:
+      - product_id
+      - quantity
+    OrderCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        items: &id009
+          type: array
+          minItems: 1
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/OrderItemRequest'
+          description: 1-50 non-null items with unique product_id values.
+        promo_code:
+          type: string
+          pattern: ^[A-Z0-9_]{4,20}$
+          nullable: true
+      required:
+      - items
+    OrderUpdate:
+      type: object
+      additionalProperties: false
+      properties:
+        items: *id009
+      required:
+      - items
+    OrderItemResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        product_id: *id001
+        quantity:
+          type: integer
+        price_at_order: &id010
+          type: number
+          format: decimal
+          minimum: 0
+          maximum: 9999999999999.99
+          multipleOf: 0.01
+          x-field-extra-annotation: '@jakarta.validation.constraints.Digits(integer
+            = 13, fraction = 2)'
+      required:
+      - id
+      - product_id
+      - quantity
+      - price_at_order
+    OrderResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        user_id: *id001
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemResponse'
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+        promo_code_id:
+          type: string
+          format: uuid
+          nullable: true
+        subtotal:
+          type: number
+          format: decimal
+          minimum: 0
+          multipleOf: 0.01
+        discount_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          multipleOf: 0.01
+        total_amount:
+          type: number
+          format: decimal
+          minimum: 0
+          multipleOf: 0.01
+        created_at: *id008
+        updated_at: *id008
+      required:
+      - id
+      - user_id
+      - items
+      - status
+      - subtotal
+      - discount_amount
+      - total_amount
+      - created_at
+      - updated_at
+    OrderStatusChange:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          $ref: '#/components/schemas/OrderStatus'
+      required:
+      - status
+    PromoCreate:
+      type: object
+      additionalProperties: false
+      properties:
+        code: &id011
+          type: string
+          pattern: ^[A-Z0-9_]{4,20}$
+        discount_type: &id012
+          $ref: '#/components/schemas/DiscountType'
+        discount_value: &id013
+          type: number
+          format: decimal
+          minimum: 0.01
+          maximum: 9999999999999.99
+          multipleOf: 0.01
+          x-field-extra-annotation: '@jakarta.validation.constraints.Digits(integer
+            = 13, fraction = 2)'
+        min_order_amount: *id010
+        max_uses: &id014
+          type: integer
+          minimum: 1
+        valid_from: *id008
+        valid_until: *id008
+        active: &id015
+          type: boolean
+      required:
+      - code
+      - discount_type
+      - discount_value
+      - min_order_amount
+      - max_uses
+      - valid_from
+      - valid_until
+      - active
+    PromoResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        id: *id001
+        code: *id011
+        discount_type: *id012
+        discount_value: *id013
+        min_order_amount: *id010
+        max_uses: *id014
+        valid_from: *id008
+        valid_until: *id008
+        active: *id015
+        current_uses:
+          type: integer
+      required:
+      - id
+      - code
+      - discount_type
+      - discount_value
+      - min_order_amount
+      - max_uses
+      - valid_from
+      - valid_until
+      - active
+      - current_uses
