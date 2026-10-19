@@ -1,0 +1,30 @@
+# Build output and generated sources
+target/
+build/
+out/
+*.class
+*.jar
+*.war
+
+# Editor configuration
+.idea/
+.vscode/
+*.iml
+*.swp
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+/settings.xml
+
+# Runtime and local tooling
+*.log
+__pycache__/
+.DS_Store
